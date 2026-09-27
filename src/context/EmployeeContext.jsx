@@ -11,12 +11,15 @@ export const EmployeeProvider = ({ children }) => {
       const savedData = localStorage.getItem('ems_employees');
       if (savedData) {
         const parsed = JSON.parse(savedData);
-        // Fallback check to migrate legacy sample data if present
-        if (parsed.length > 0 && parsed[0].name === "Alex Rivera") {
-          localStorage.setItem('ems_employees', JSON.stringify(INITIAL_EMPLOYEES));
-          return INITIAL_EMPLOYEES;
+        // Ensure parsed data is a valid array
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Fallback check to migrate legacy sample data if present
+          if (parsed[0].name === "Alex Rivera") {
+            localStorage.setItem('ems_employees', JSON.stringify(INITIAL_EMPLOYEES));
+            return INITIAL_EMPLOYEES;
+          }
+          return parsed;
         }
-        return parsed;
       }
       return INITIAL_EMPLOYEES;
     } catch (error) {
@@ -48,14 +51,17 @@ export const EmployeeProvider = ({ children }) => {
   // Toast Notification State
   const [toast, setToast] = useState(null);
 
+  // Defensive array getter
+  const safeEmployees = Array.isArray(employees) ? employees : INITIAL_EMPLOYEES;
+
   // 3. Sync employee list changes to LocalStorage automatically
   useEffect(() => {
     try {
-      localStorage.setItem('ems_employees', JSON.stringify(employees));
+      localStorage.setItem('ems_employees', JSON.stringify(safeEmployees));
     } catch (error) {
       console.error("Failed to save employees to local storage:", error);
     }
-  }, [employees]);
+  }, [safeEmployees]);
 
   // Sync theme attribute to HTML document root
   useEffect(() => {
@@ -81,7 +87,7 @@ export const EmployeeProvider = ({ children }) => {
 
   // C - Create: Add new employee to array
   const addEmployee = (employeeData) => {
-    const nextIdNumber = 1000 + employees.length + 1;
+    const nextIdNumber = 1000 + safeEmployees.length + 1;
     const newEmployee = {
       ...employeeData,
       id: `EMP-${nextIdNumber}`,
@@ -91,14 +97,14 @@ export const EmployeeProvider = ({ children }) => {
       avatar: employeeData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(employeeData.name)}`
     };
 
-    setEmployees(prevEmployees => [newEmployee, ...prevEmployees]);
+    setEmployees(prevEmployees => [newEmployee, ...(Array.isArray(prevEmployees) ? prevEmployees : [])]);
     showToast(`Added ${newEmployee.name} to employee directory`, 'success');
   };
 
   // U - Update: Modify existing employee details by ID using .map()
   const updateEmployee = (id, updatedFields) => {
     setEmployees(prevEmployees =>
-      prevEmployees.map(emp =>
+      (Array.isArray(prevEmployees) ? prevEmployees : []).map(emp =>
         emp.id === id
           ? {
               ...emp,
@@ -114,8 +120,8 @@ export const EmployeeProvider = ({ children }) => {
 
   // D - Delete: Remove employee by ID using .filter()
   const deleteEmployee = (id) => {
-    const empToDelete = employees.find(emp => emp.id === id);
-    setEmployees(prevEmployees => prevEmployees.filter(emp => emp.id !== id));
+    const empToDelete = safeEmployees.find(emp => emp.id === id);
+    setEmployees(prevEmployees => (Array.isArray(prevEmployees) ? prevEmployees : []).filter(emp => emp.id !== id));
     showToast(`Deleted employee ${empToDelete ? empToDelete.name : id}`, 'danger');
   };
 
@@ -130,16 +136,17 @@ export const EmployeeProvider = ({ children }) => {
   // Search, Filter & Sort Logic using JavaScript Array Methods
   // ----------------------------------------------------
   const filteredEmployees = useMemo(() => {
-    return employees
+    return safeEmployees
       .filter(emp => {
+        if (!emp) return false;
         // Search matching using .includes()
         const query = searchQuery.toLowerCase();
         const matchesSearch =
           searchQuery === '' ||
-          emp.name.toLowerCase().includes(query) ||
-          emp.email.toLowerCase().includes(query) ||
-          emp.role.toLowerCase().includes(query) ||
-          emp.id.toLowerCase().includes(query);
+          (emp.name && emp.name.toLowerCase().includes(query)) ||
+          (emp.email && emp.email.toLowerCase().includes(query)) ||
+          (emp.role && emp.role.toLowerCase().includes(query)) ||
+          (emp.id && emp.id.toLowerCase().includes(query));
 
         // Department filter matching
         const matchesDept =
@@ -156,32 +163,33 @@ export const EmployeeProvider = ({ children }) => {
         return matchesSearch && matchesDept && matchesType && matchesStatus;
       })
       .sort((a, b) => {
-        let valA = a[sortBy];
-        let valB = b[sortBy];
+        let valA = a ? a[sortBy] : '';
+        let valB = b ? b[sortBy] : '';
 
         if (typeof valA === 'string') {
           valA = valA.toLowerCase();
-          valB = valB.toLowerCase();
+          valB = valB ? valB.toLowerCase() : '';
         }
 
         if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
         if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [employees, searchQuery, selectedDepartment, selectedEmploymentType, selectedStatus, sortBy, sortOrder]);
+  }, [safeEmployees, searchQuery, selectedDepartment, selectedEmploymentType, selectedStatus, sortBy, sortOrder]);
 
   // ----------------------------------------------------
   // Calculate Dashboard Statistics using Array .reduce()
   // ----------------------------------------------------
   const stats = useMemo(() => {
-    const totalEmployees = employees.length;
-    const totalPayroll = employees.reduce((sum, emp) => sum + (Number(emp.baseSalary) || 0), 0);
+    const totalEmployees = safeEmployees.length;
+    const totalPayroll = safeEmployees.reduce((sum, emp) => sum + (Number(emp?.baseSalary) || 0), 0);
     const avgSalary = totalEmployees > 0 ? totalPayroll / totalEmployees : 0;
-    const activeCount = employees.filter(emp => emp.status === 'Active' || emp.status === 'Remote').length;
+    const activeCount = safeEmployees.filter(emp => emp?.status === 'Active' || emp?.status === 'Remote').length;
 
     // Calculate department breakdown
     const departmentBreakdown = {};
-    employees.forEach(emp => {
+    safeEmployees.forEach(emp => {
+      if (!emp) return;
       const dept = emp.department || 'Other';
       if (!departmentBreakdown[dept]) {
         departmentBreakdown[dept] = { count: 0, totalSalary: 0 };
@@ -197,7 +205,7 @@ export const EmployeeProvider = ({ children }) => {
       activeCount,
       departmentBreakdown
     };
-  }, [employees]);
+  }, [safeEmployees]);
 
   // CSV Export utility
   const exportToCSV = () => {
@@ -237,7 +245,7 @@ export const EmployeeProvider = ({ children }) => {
   return (
     <EmployeeContext.Provider
       value={{
-        employees,
+        employees: safeEmployees,
         filteredEmployees,
         stats,
         theme,

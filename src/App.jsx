@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { EmployeeProvider, useEmployeeContext } from './context/EmployeeContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
@@ -10,6 +10,69 @@ import { EmployeeFormModal } from './components/EmployeeFormModal';
 import { EmployeeDetailModal } from './components/EmployeeDetailModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
 import { Toast } from './components/Toast';
+
+// Error Boundary component to prevent blank screen crashes
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Uncaught application error:", error, errorInfo);
+  }
+
+  handleReset = () => {
+    localStorage.removeItem('ems_employees');
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#0b0f19',
+          color: '#f8fafc',
+          fontFamily: 'sans-serif',
+          padding: '2rem',
+          textAlign: 'center'
+        }}>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem', color: '#ef4444' }}>
+            Something went wrong
+          </h2>
+          <p style={{ color: '#94a3b8', maxWidth: '500px', marginBottom: '1.5rem' }}>
+            An unexpected application error occurred. Click below to clear stored data and reload.
+          </p>
+          <button 
+            onClick={this.handleReset}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#6366f1',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Reset Application State
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const MainDashboardContent = () => {
   const { activeTab, viewMode } = useEmployeeContext();
@@ -100,22 +163,24 @@ const MainDashboardContent = () => {
 
 export default function App() {
   return (
-    <EmployeeProvider>
-      <div className="app-container">
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          <Navbar />
-          <div style={{ display: 'flex', flex: 1 }}>
-            <Sidebar />
-            <MainDashboardContent />
+    <ErrorBoundary>
+      <EmployeeProvider>
+        <div className="app-container">
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <Navbar />
+            <div style={{ display: 'flex', flex: 1 }}>
+              <Sidebar />
+              <MainDashboardContent />
+            </div>
           </div>
-        </div>
 
-        {/* Floating Modals & Alerts */}
-        <EmployeeFormModal />
-        <EmployeeDetailModal />
-        <DeleteConfirmModal />
-        <Toast />
-      </div>
-    </EmployeeProvider>
+          {/* Floating Modals & Alerts */}
+          <EmployeeFormModal />
+          <EmployeeDetailModal />
+          <DeleteConfirmModal />
+          <Toast />
+        </div>
+      </EmployeeProvider>
+    </ErrorBoundary>
   );
 }
