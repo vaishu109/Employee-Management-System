@@ -1,3 +1,4 @@
+// Initial sample dataset of employees for initial load & demo reset
 export const INITIAL_EMPLOYEES = [
   {
     id: "EMP-1001",
@@ -161,6 +162,7 @@ export const INITIAL_EMPLOYEES = [
   }
 ];
 
+// Department filter options
 export const DEPARTMENTS = [
   "All Departments",
   "Engineering",
@@ -171,10 +173,13 @@ export const DEPARTMENTS = [
   "Finance"
 ];
 
+// Employment type filter options
 export const EMPLOYMENT_TYPES = ["All Types", "Full-Time", "Part-Time", "Contract", "Intern"];
 
+// Work status options
 export const STATUS_OPTIONS = ["Active", "Remote", "On Leave", "Terminated"];
 
+// Supported currencies with relative rates
 export const CURRENCIES = {
   INR: { symbol: "₹", code: "INR", rate: 1, label: "INR (₹)" },
   USD: { symbol: "$", code: "USD", rate: 0.012, label: "USD ($)" },
@@ -182,6 +187,7 @@ export const CURRENCIES = {
   GBP: { symbol: "£", code: "GBP", rate: 0.0094, label: "GBP (£)" }
 };
 
+// Helper function to format currency amounts based on selected currency
 export const formatCurrency = (amount, currencyKey = "INR") => {
   const curr = CURRENCIES[currencyKey] || CURRENCIES.INR;
   const converted = amount * curr.rate;
@@ -201,6 +207,7 @@ export const formatCurrency = (amount, currencyKey = "INR") => {
   }).format(converted);
 };
 
+// Helper function to format annual INR amounts into Lakhs Per Annum (LPA)
 export const formatLPA = (amountINR) => {
   if (!amountINR) return "₹0 LPA";
   const lpa = (amountINR / 100000).toFixed(2);

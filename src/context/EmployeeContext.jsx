@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { INITIAL_EMPLOYEES } from '../data/mockEmployees';
 
+// 1. Create Context for central state management
 const EmployeeContext = createContext(null);
 
 export const EmployeeProvider = ({ children }) => {
-  // Persistence in LocalStorage (resetting to Indian dataset if legacy data detected)
+  // 2. State for Employee List initialized from LocalStorage or default sample data
   const [employees, setEmployees] = useState(() => {
     try {
-      const saved = localStorage.getItem('ems_employees');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // If parsed data contains legacy US dataset, update to Indian dataset
+      const savedData = localStorage.getItem('ems_employees');
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        // Fallback check to migrate legacy sample data if present
         if (parsed.length > 0 && parsed[0].name === "Alex Rivera") {
           localStorage.setItem('ems_employees', JSON.stringify(INITIAL_EMPLOYEES));
           return INITIAL_EMPLOYEES;
@@ -18,50 +19,51 @@ export const EmployeeProvider = ({ children }) => {
         return parsed;
       }
       return INITIAL_EMPLOYEES;
-    } catch (e) {
-      console.error("Failed to load employees from local storage", e);
+    } catch (error) {
+      console.error("Failed to load employees from local storage:", error);
       return INITIAL_EMPLOYEES;
     }
   });
 
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('ems_theme') || 'dark';
-  });
+  // Theme & Currency States
+  const [theme, setTheme] = useState(() => localStorage.getItem('ems_theme') || 'dark');
+  const [currency, setCurrency] = useState('INR'); // Default currency is INR (₹)
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'employees', 'departments', 'payroll'
 
-  const [currency, setCurrency] = useState('INR'); // Default to INR ₹
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'employees' | 'departments' | 'payroll'
-
-  // Search, Filter & Sort State
+  // Search, Filter & Sort States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [selectedEmploymentType, setSelectedEmploymentType] = useState('All Types');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  const [sortBy, setSortBy] = useState('name'); // 'name' | 'salary' | 'joinDate' | 'department'
-  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+  const [sortBy, setSortBy] = useState('name'); // 'name', 'baseSalary', 'joinDate', 'department'
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
 
-  // Modals & Drawers State
+  // Modal Dialog States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState(null); // null for create, employee obj for edit
+  const [editingEmployee, setEditingEmployee] = useState(null); // null for create, object for edit
   const [selectedDetailEmployee, setSelectedDetailEmployee] = useState(null);
   const [deletingEmployeeId, setDeletingEmployeeId] = useState(null);
 
   // Toast Notification State
   const [toast, setToast] = useState(null);
 
+  // 3. Sync employee list changes to LocalStorage automatically
   useEffect(() => {
     try {
       localStorage.setItem('ems_employees', JSON.stringify(employees));
-    } catch (e) {
-      console.error("Failed to save employees to local storage", e);
+    } catch (error) {
+      console.error("Failed to save employees to local storage:", error);
     }
   }, [employees]);
 
+  // Sync theme attribute to HTML document root
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('ems_theme', theme);
   }, [theme]);
 
+  // Helper method to display toast feedback messages
   const showToast = (message, type = 'info') => {
     setToast({ message, type, id: Date.now() });
     setTimeout(() => {
@@ -70,95 +72,122 @@ export const EmployeeProvider = ({ children }) => {
   };
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  // CRUD Operations
+  // ----------------------------------------------------
+  // CRUD Operations (Create, Read, Update, Delete)
+  // ----------------------------------------------------
+
+  // C - Create: Add new employee to array
   const addEmployee = (employeeData) => {
-    const nextNumber = 1000 + employees.length + 1;
+    const nextIdNumber = 1000 + employees.length + 1;
     const newEmployee = {
       ...employeeData,
-      id: `EMP-${nextNumber}`,
+      id: `EMP-${nextIdNumber}`,
       baseSalary: Number(employeeData.baseSalary) || 0,
       bonus: Number(employeeData.bonus) || 0,
       joinDate: employeeData.joinDate || new Date().toISOString().split('T')[0],
       avatar: employeeData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(employeeData.name)}`
     };
 
-    setEmployees(prev => [newEmployee, ...prev]);
+    setEmployees(prevEmployees => [newEmployee, ...prevEmployees]);
     showToast(`Added ${newEmployee.name} to employee directory`, 'success');
   };
 
-  const updateEmployee = (id, updatedData) => {
-    setEmployees(prev =>
-      prev.map(emp => (emp.id === id ? { ...emp, ...updatedData, baseSalary: Number(updatedData.baseSalary), bonus: Number(updatedData.bonus) } : emp))
+  // U - Update: Modify existing employee details by ID using .map()
+  const updateEmployee = (id, updatedFields) => {
+    setEmployees(prevEmployees =>
+      prevEmployees.map(emp =>
+        emp.id === id
+          ? {
+              ...emp,
+              ...updatedFields,
+              baseSalary: Number(updatedFields.baseSalary),
+              bonus: Number(updatedFields.bonus)
+            }
+          : emp
+      )
     );
-    showToast(`Updated employee details for ${updatedData.name}`, 'info');
+    showToast(`Updated details for ${updatedFields.name}`, 'info');
   };
 
+  // D - Delete: Remove employee by ID using .filter()
   const deleteEmployee = (id) => {
-    const emp = employees.find(e => e.id === id);
-    setEmployees(prev => prev.filter(e => e.id !== id));
-    showToast(`Deleted employee ${emp ? emp.name : id}`, 'danger');
+    const empToDelete = employees.find(emp => emp.id === id);
+    setEmployees(prevEmployees => prevEmployees.filter(emp => emp.id !== id));
+    showToast(`Deleted employee ${empToDelete ? empToDelete.name : id}`, 'danger');
   };
 
+  // Reset to initial sample data
   const resetToDefaultData = () => {
     setEmployees(INITIAL_EMPLOYEES);
     localStorage.setItem('ems_employees', JSON.stringify(INITIAL_EMPLOYEES));
-    showToast('Reset employee records to Indian demo dataset', 'warning');
+    showToast('Reset employee records to demo dataset', 'warning');
   };
 
-  // Filtering & Sorting Logic
+  // ----------------------------------------------------
+  // Search, Filter & Sort Logic using JavaScript Array Methods
+  // ----------------------------------------------------
   const filteredEmployees = useMemo(() => {
-    return employees.filter(emp => {
-      const matchesSearch =
-        searchQuery === '' ||
-        emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.id.toLowerCase().includes(searchQuery.toLowerCase());
+    return employees
+      .filter(emp => {
+        // Search matching using .includes()
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          searchQuery === '' ||
+          emp.name.toLowerCase().includes(query) ||
+          emp.email.toLowerCase().includes(query) ||
+          emp.role.toLowerCase().includes(query) ||
+          emp.id.toLowerCase().includes(query);
 
-      const matchesDept =
-        selectedDepartment === 'All Departments' || emp.department === selectedDepartment;
+        // Department filter matching
+        const matchesDept =
+          selectedDepartment === 'All Departments' || emp.department === selectedDepartment;
 
-      const matchesType =
-        selectedEmploymentType === 'All Types' || emp.employmentType === selectedEmploymentType;
+        // Employment type filter matching
+        const matchesType =
+          selectedEmploymentType === 'All Types' || emp.employmentType === selectedEmploymentType;
 
-      const matchesStatus =
-        selectedStatus === 'All' || emp.status === selectedStatus;
+        // Status filter matching
+        const matchesStatus =
+          selectedStatus === 'All' || emp.status === selectedStatus;
 
-      return matchesSearch && matchesDept && matchesType && matchesStatus;
-    }).sort((a, b) => {
-      let valA = a[sortBy];
-      let valB = b[sortBy];
+        return matchesSearch && matchesDept && matchesType && matchesStatus;
+      })
+      .sort((a, b) => {
+        let valA = a[sortBy];
+        let valB = b[sortBy];
 
-      if (typeof valA === 'string') {
-        valA = valA.toLowerCase();
-        valB = valB.toLowerCase();
-      }
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+        }
 
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
-    });
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
   }, [employees, searchQuery, selectedDepartment, selectedEmploymentType, selectedStatus, sortBy, sortOrder]);
 
-  // Analytics Metrics
+  // ----------------------------------------------------
+  // Calculate Dashboard Statistics using Array .reduce()
+  // ----------------------------------------------------
   const stats = useMemo(() => {
     const totalEmployees = employees.length;
-    const totalPayroll = employees.reduce((acc, emp) => acc + (Number(emp.baseSalary) || 0), 0);
+    const totalPayroll = employees.reduce((sum, emp) => sum + (Number(emp.baseSalary) || 0), 0);
     const avgSalary = totalEmployees > 0 ? totalPayroll / totalEmployees : 0;
-    const activeCount = employees.filter(e => e.status === 'Active' || e.status === 'Remote').length;
+    const activeCount = employees.filter(emp => emp.status === 'Active' || emp.status === 'Remote').length;
 
-    // Department Breakdown
-    const deptMap = {};
+    // Calculate department breakdown
+    const departmentBreakdown = {};
     employees.forEach(emp => {
       const dept = emp.department || 'Other';
-      if (!deptMap[dept]) {
-        deptMap[dept] = { count: 0, totalSalary: 0 };
+      if (!departmentBreakdown[dept]) {
+        departmentBreakdown[dept] = { count: 0, totalSalary: 0 };
       }
-      deptMap[dept].count += 1;
-      deptMap[dept].totalSalary += Number(emp.baseSalary) || 0;
+      departmentBreakdown[dept].count += 1;
+      departmentBreakdown[dept].totalSalary += Number(emp.baseSalary) || 0;
     });
 
     return {
@@ -166,11 +195,11 @@ export const EmployeeProvider = ({ children }) => {
       totalPayroll,
       avgSalary,
       activeCount,
-      departmentBreakdown: deptMap
+      departmentBreakdown
     };
   }, [employees]);
 
-  // Export CSV Helper
+  // CSV Export utility
   const exportToCSV = () => {
     if (filteredEmployees.length === 0) {
       showToast('No records available to export', 'warning');
@@ -193,64 +222,67 @@ export const EmployeeProvider = ({ children }) => {
       `"${emp.location}"`
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `India_Employee_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `Employee_Report_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast(`Exported ${filteredEmployees.length} Indian employee records to CSV`, 'success');
+    showToast(`Exported ${filteredEmployees.length} employee records to CSV`, 'success');
   };
 
   return (
-    <EmployeeContext.Provider value={{
-      employees,
-      filteredEmployees,
-      stats,
-      theme,
-      toggleTheme,
-      currency,
-      setCurrency,
-      viewMode,
-      setViewMode,
-      activeTab,
-      setActiveTab,
-      searchQuery,
-      setSearchQuery,
-      selectedDepartment,
-      setSelectedDepartment,
-      selectedEmploymentType,
-      setSelectedEmploymentType,
-      selectedStatus,
-      setSelectedStatus,
-      sortBy,
-      setSortBy,
-      sortOrder,
-      setSortOrder,
-      addEmployee,
-      updateEmployee,
-      deleteEmployee,
-      resetToDefaultData,
-      isFormModalOpen,
-      setIsFormModalOpen,
-      editingEmployee,
-      setEditingEmployee,
-      selectedDetailEmployee,
-      setSelectedDetailEmployee,
-      deletingEmployeeId,
-      setDeletingEmployeeId,
-      toast,
-      showToast,
-      exportToCSV
-    }}>
+    <EmployeeContext.Provider
+      value={{
+        employees,
+        filteredEmployees,
+        stats,
+        theme,
+        toggleTheme,
+        currency,
+        setCurrency,
+        viewMode,
+        setViewMode,
+        activeTab,
+        setActiveTab,
+        searchQuery,
+        setSearchQuery,
+        selectedDepartment,
+        setSelectedDepartment,
+        selectedEmploymentType,
+        setSelectedEmploymentType,
+        selectedStatus,
+        setSelectedStatus,
+        sortBy,
+        setSortBy,
+        sortOrder,
+        setSortOrder,
+        addEmployee,
+        updateEmployee,
+        deleteEmployee,
+        resetToDefaultData,
+        isFormModalOpen,
+        setIsFormModalOpen,
+        editingEmployee,
+        setEditingEmployee,
+        selectedDetailEmployee,
+        setSelectedDetailEmployee,
+        deletingEmployeeId,
+        setDeletingEmployeeId,
+        toast,
+        showToast,
+        exportToCSV
+      }}
+    >
       {children}
     </EmployeeContext.Provider>
   );
 };
 
+// Custom hook to consume EmployeeContext easily in components
 export const useEmployeeContext = () => {
   const context = useContext(EmployeeContext);
   if (!context) {
