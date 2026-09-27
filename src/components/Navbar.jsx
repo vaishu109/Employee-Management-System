@@ -59,12 +59,13 @@ export const Navbar = () => {
 
       <div className="navbar-right">
         {/* Currency Switcher */}
-        <div className="currency-selector">
-          <Globe size={16} className="text-muted" />
+        <div className="currency-selector" title="Select Currency">
+          <Globe size={16} className="text-indigo" />
           <select 
             value={currency} 
             onChange={(e) => setCurrency(e.target.value)}
             className="currency-dropdown"
+            aria-label="Currency Selector"
           >
             <option value="INR">INR (₹)</option>
             <option value="USD">USD ($)</option>
@@ -218,24 +219,35 @@ export const Navbar = () => {
         .currency-selector {
           display: flex;
           align-items: center;
-          gap: 0.4rem;
+          gap: 0.45rem;
           background: var(--bg-secondary);
-          padding: 0.3rem 0.7rem;
-          border: 1px solid var(--border-color);
+          padding: 0.4rem 0.8rem;
+          border: 1px solid var(--border-glow);
           border-radius: var(--radius-md);
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+          transition: var(--transition-fast);
+        }
+
+        .currency-selector:hover {
+          border-color: var(--accent-primary);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
         }
 
         .currency-dropdown {
-          background: transparent;
+          background: var(--bg-secondary);
           border: none;
           color: var(--text-primary);
           font-weight: 700;
-          font-size: 0.825rem;
+          font-size: 0.85rem;
           cursor: pointer;
+          outline: none;
         }
 
-        .currency-dropdown:focus {
-          outline: none;
+        .currency-dropdown option {
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          font-weight: 600;
+          padding: 0.5rem;
         }
 
         @media (max-width: 900px) {
