@@ -1,0 +1,22 @@
+import fs from 'fs';
+
+const devHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employee Management System (PulseHR India)</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+`;
+
+try {
+  fs.writeFileSync('index.html', devHtml);
+} catch (err) {
+  console.error('Error writing dev index.html:', err);
+}

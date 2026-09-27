@@ -6,6 +6,7 @@
   "homepage": "https://vaishu109.github.io/Employee-Management-System/",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/restore-dev-html.js",
     "build": "vite build && node scripts/copy-docs.js",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
