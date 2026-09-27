@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEmployeeContext } from '../context/EmployeeContext';
-import { formatCurrency } from '../data/mockEmployees';
+import { formatCurrency, formatLPA } from '../data/mockEmployees';
 import { 
   X, 
   Mail, 
@@ -8,11 +8,8 @@ import {
   MapPin, 
   Calendar, 
   Briefcase, 
-  DollarSign, 
-  Award, 
   Edit2, 
-  Building2,
-  Clock
+  Building2
 } from 'lucide-react';
 
 export const EmployeeDetailModal = () => {
@@ -126,14 +123,17 @@ export const EmployeeDetailModal = () => {
 
           {/* Right Column: Salary & Compensation Breakdown */}
           <div className="profile-card-block">
-            <h4 className="block-title">Compensation & Salary Metrics</h4>
+            <h4 className="block-title">Compensation & CTC Metrics</h4>
             <div className="salary-breakdown-card">
               <div className="salary-row">
-                <span className="salary-label-text">Annual Base Salary</span>
-                <span className="salary-val-large">{formatCurrency(annualSalary, currency)}</span>
+                <span className="salary-label-text">Annual CTC</span>
+                <span className="salary-val-large">
+                  {formatCurrency(annualSalary, currency)}
+                  {currency === 'INR' && <span className="lpa-tag"> ({formatLPA(annualSalary)})</span>}
+                </span>
               </div>
               <div className="salary-row sub-row">
-                <span className="salary-label-text">Est. Monthly Pay</span>
+                <span className="salary-label-text">Est. Monthly Base</span>
                 <span className="salary-val-sub">{formatCurrency(monthlySalary, currency)}</span>
               </div>
               <div className="salary-row sub-row">
@@ -300,10 +300,16 @@ export const EmployeeDetailModal = () => {
         }
 
         .salary-val-large {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           font-weight: 800;
           color: #34d399;
           font-family: var(--font-heading);
+        }
+
+        .lpa-tag {
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #818cf8;
         }
 
         .salary-val-sub {

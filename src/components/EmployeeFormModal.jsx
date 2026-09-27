@@ -21,9 +21,9 @@ export const EmployeeFormModal = () => {
     employmentType: 'Full-Time',
     status: 'Active',
     joinDate: new Date().toISOString().split('T')[0],
-    baseSalary: 100000,
+    baseSalary: 1800000,
     bonus: 10,
-    location: 'Remote',
+    location: 'Bengaluru, KA',
     avatar: ''
   });
 
@@ -40,9 +40,9 @@ export const EmployeeFormModal = () => {
         employmentType: editingEmployee.employmentType || 'Full-Time',
         status: editingEmployee.status || 'Active',
         joinDate: editingEmployee.joinDate || new Date().toISOString().split('T')[0],
-        baseSalary: editingEmployee.baseSalary || 100000,
+        baseSalary: editingEmployee.baseSalary || 1800000,
         bonus: editingEmployee.bonus || 0,
-        location: editingEmployee.location || 'Remote',
+        location: editingEmployee.location || 'Bengaluru, KA',
         avatar: editingEmployee.avatar || ''
       });
     } else {
@@ -55,9 +55,9 @@ export const EmployeeFormModal = () => {
         employmentType: 'Full-Time',
         status: 'Active',
         joinDate: new Date().toISOString().split('T')[0],
-        baseSalary: 100000,
+        baseSalary: 1800000,
         bonus: 10,
-        location: 'Remote',
+        location: 'Bengaluru, KA',
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`
       });
     }
@@ -116,7 +116,7 @@ export const EmployeeFormModal = () => {
         <div className="modal-header">
           <div className="modal-title-box">
             <h3>{editingEmployee ? '✏️ Update Employee Details' : '➕ Add New Employee'}</h3>
-            <p className="text-muted">{editingEmployee ? `Editing record for ID: ${editingEmployee.id}` : 'Fill in the administrative details for the new staff member.'}</p>
+            <p className="text-muted">{editingEmployee ? `Editing record for ID: ${editingEmployee.id}` : 'Fill in personnel details for the team member.'}</p>
           </div>
           <button className="btn btn-outline btn-icon close-btn" onClick={() => setIsFormModalOpen(false)}>
             <X size={18} />
@@ -162,7 +162,7 @@ export const EmployeeFormModal = () => {
                 type="text" 
                 name="name" 
                 className={`form-input ${errors.name ? 'input-error' : ''}`}
-                placeholder="e.g. Sarah Connor"
+                placeholder="e.g. Aarav Sharma"
                 value={formData.name}
                 onChange={handleChange}
               />
@@ -176,7 +176,7 @@ export const EmployeeFormModal = () => {
                 type="email" 
                 name="email" 
                 className={`form-input ${errors.email ? 'input-error' : ''}`}
-                placeholder="sarah@company.com"
+                placeholder="aarav@company.in"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -190,7 +190,7 @@ export const EmployeeFormModal = () => {
                 type="text" 
                 name="phone" 
                 className="form-input"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+91 98765 43210"
                 value={formData.phone}
                 onChange={handleChange}
               />
@@ -203,7 +203,7 @@ export const EmployeeFormModal = () => {
                 type="text" 
                 name="role" 
                 className={`form-input ${errors.role ? 'input-error' : ''}`}
-                placeholder="e.g. Senior Frontend Engineer"
+                placeholder="e.g. Senior Software Engineer"
                 value={formData.role}
                 onChange={handleChange}
               />
@@ -269,12 +269,12 @@ export const EmployeeFormModal = () => {
 
             {/* Base Salary */}
             <div className="form-group">
-              <label className="form-label">Base Salary (USD $ Annual) *</label>
+              <label className="form-label">Annual CTC (INR ₹) *</label>
               <input 
                 type="number" 
                 name="baseSalary" 
                 className={`form-input ${errors.baseSalary ? 'input-error' : ''}`}
-                placeholder="120000"
+                placeholder="1800000"
                 value={formData.baseSalary}
                 onChange={handleChange}
               />
@@ -288,7 +288,7 @@ export const EmployeeFormModal = () => {
                 type="text" 
                 name="location" 
                 className="form-input"
-                placeholder="San Francisco, CA or Remote"
+                placeholder="Bengaluru, KA or Remote"
                 value={formData.location}
                 onChange={handleChange}
               />

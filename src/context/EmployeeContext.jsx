@@ -4,11 +4,20 @@ import { INITIAL_EMPLOYEES } from '../data/mockEmployees';
 const EmployeeContext = createContext(null);
 
 export const EmployeeProvider = ({ children }) => {
-  // Persistence in LocalStorage
+  // Persistence in LocalStorage (resetting to Indian dataset if legacy data detected)
   const [employees, setEmployees] = useState(() => {
     try {
       const saved = localStorage.getItem('ems_employees');
-      return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // If parsed data contains legacy US dataset, update to Indian dataset
+        if (parsed.length > 0 && parsed[0].name === "Alex Rivera") {
+          localStorage.setItem('ems_employees', JSON.stringify(INITIAL_EMPLOYEES));
+          return INITIAL_EMPLOYEES;
+        }
+        return parsed;
+      }
+      return INITIAL_EMPLOYEES;
     } catch (e) {
       console.error("Failed to load employees from local storage", e);
       return INITIAL_EMPLOYEES;
@@ -19,7 +28,7 @@ export const EmployeeProvider = ({ children }) => {
     return localStorage.getItem('ems_theme') || 'dark';
   });
 
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('INR'); // Default to INR ₹
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'employees' | 'departments' | 'payroll'
 
@@ -95,7 +104,8 @@ export const EmployeeProvider = ({ children }) => {
 
   const resetToDefaultData = () => {
     setEmployees(INITIAL_EMPLOYEES);
-    showToast('Reset employee records to demo dataset', 'warning');
+    localStorage.setItem('ems_employees', JSON.stringify(INITIAL_EMPLOYEES));
+    showToast('Reset employee records to Indian demo dataset', 'warning');
   };
 
   // Filtering & Sorting Logic
@@ -167,7 +177,7 @@ export const EmployeeProvider = ({ children }) => {
       return;
     }
 
-    const headers = ["ID", "Name", "Email", "Phone", "Department", "Role", "Type", "Status", "Join Date", "Base Salary ($)", "Bonus (%)", "Location"];
+    const headers = ["ID", "Name", "Email", "Phone", "Department", "Role", "Type", "Status", "Join Date", "CTC Salary (INR ₹)", "Bonus (%)", "Location"];
     const rows = filteredEmployees.map(emp => [
       emp.id,
       `"${emp.name}"`,
@@ -187,12 +197,12 @@ export const EmployeeProvider = ({ children }) => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Employee_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `India_Employee_Report_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast(`Exported ${filteredEmployees.length} employee records to CSV`, 'success');
+    showToast(`Exported ${filteredEmployees.length} Indian employee records to CSV`, 'success');
   };
 
   return (

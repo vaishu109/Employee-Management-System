@@ -6,10 +6,8 @@ import {
   Plus, 
   Sun, 
   Moon, 
-  DollarSign, 
   Globe, 
-  RotateCcw,
-  Sparkles
+  RotateCcw
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -39,7 +37,7 @@ export const Navbar = () => {
           </div>
           <div className="brand-text">
             <h2>Pulse<span className="text-gradient">HR</span></h2>
-            <span className="brand-badge">ADMIN</span>
+            <span className="brand-badge">INDIA ADMIN</span>
           </div>
         </div>
       </div>
@@ -68,10 +66,10 @@ export const Navbar = () => {
             onChange={(e) => setCurrency(e.target.value)}
             className="currency-dropdown"
           >
+            <option value="INR">INR (₹)</option>
             <option value="USD">USD ($)</option>
             <option value="EUR">EUR (€)</option>
             <option value="GBP">GBP (£)</option>
-            <option value="INR">INR (₹)</option>
           </select>
         </div>
 
@@ -88,7 +86,7 @@ export const Navbar = () => {
         <button 
           className="btn btn-secondary btn-icon" 
           onClick={resetToDefaultData}
-          title="Reset to sample data"
+          title="Reset to Indian sample dataset"
         >
           <RotateCcw size={17} />
         </button>
@@ -153,13 +151,13 @@ export const Navbar = () => {
         }
 
         .brand-badge {
-          font-size: 0.65rem;
-          font-weight: 700;
-          background: rgba(99, 102, 241, 0.15);
+          font-size: 0.625rem;
+          font-weight: 800;
+          background: rgba(99, 102, 241, 0.18);
           color: #818cf8;
-          padding: 0.1rem 0.4rem;
+          padding: 0.15rem 0.45rem;
           border-radius: 4px;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.06em;
         }
 
         .navbar-center {
@@ -231,7 +229,7 @@ export const Navbar = () => {
           background: transparent;
           border: none;
           color: var(--text-primary);
-          font-weight: 600;
+          font-weight: 700;
           font-size: 0.825rem;
           cursor: pointer;
         }
